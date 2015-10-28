@@ -1,0 +1,18 @@
+Source: openmediavault-luksencryption
+Section: admin
+Priority: optional
+Maintainer: OpenMediaVault Plugin Developers <plugins@omv-extras.org>
+Build-Depends: debhelper (>= 9)
+Standards-Version: 3.9.6
+XB-Plugin-Section: filesystems
+
+Package: openmediavault-luksencryption
+Architecture: all
+Depends: openmediavault (>= 1.12), cryptsetup (>= 1.4), ${misc:Depends}
+Description:  OpenMediaVault LUKS encryption plugin
+ LUKS is the standard for Linux hard disk encryption. By providing a
+ standard on-disk-format, it not only facilitates compatibility
+ among distributions, but also provides secure management of multiple
+ user passwords. In contrast to existing solutions, LUKS stores all
+ necessary setup information in the partition header, enabling the
+ user to transport or migrate his data seamlessly.

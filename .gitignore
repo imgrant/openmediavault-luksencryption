@@ -1,0 +1,9 @@
+.pc/
+debian/openmediavault-mpd/
+debian/openmediavault-mpd*.debhelper*
+debian/openmediavault-mpd*.substvars
+debian/files
+debian/tmp/
+.*.swp
+.*~
+*~
