@@ -1,7 +1,7 @@
 .pc/
-debian/openmediavault-mpd/
-debian/openmediavault-mpd*.debhelper*
-debian/openmediavault-mpd*.substvars
+debian/openmediavault-luksencryption/
+debian/openmediavault-luksencryption*.debhelper*
+debian/openmediavault-luksencryption*.substvars
 debian/files
 debian/tmp/
 .*.swp
