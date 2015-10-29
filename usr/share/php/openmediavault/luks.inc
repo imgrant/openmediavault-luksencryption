@@ -497,6 +497,15 @@ class OMVStorageDeviceLUKS extends OMVStorageDeviceDM {
 	}
 
 	/**
+	 * Get the container (encrypted device) that backs
+	 * (i.e. is the slave of) this decrypted (open) device
+	 * @return An OMVLuksContainer object
+	 */
+	public function getContainer() {
+		return new OMVLuksContainer($this->getLuksEncryptedDeviceFile());
+	}
+
+	/**
 	 * Checks if the container exists - synonym for isLuks().
 	 * @return TRUE if the container exists, otherwise FALSE.
 	 */
