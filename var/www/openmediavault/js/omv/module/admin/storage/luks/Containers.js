@@ -3,7 +3,9 @@
  *
  * @license   http://www.gnu.org/licenses/gpl.html GPL Version 3
  * @author    Volker Theile <volker.theile@openmediavault.org>
+ * @author    OpenMediaVault Plugin Developers <plugins@omv-extras.org>
  * @copyright Copyright (c) 2009-2015 Volker Theile
+ * @copyright Copyright (c) 2015 OpenMediaVault Plugin Developers
  *
  * OpenMediaVault is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -283,7 +285,13 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
 			text: _("Referenced"),
 			sortable: true,
 			dataIndex: "_used",
-			stateId: "_used"
+			stateId: "_used",
+			renderer: function(value) {
+				if (!value || 0 === value.length) {
+					value = _("n/a");
+				}
+				return value;
+			}
 		}],
 
 	initComponent: function() {
