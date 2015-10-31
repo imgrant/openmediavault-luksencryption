@@ -287,7 +287,9 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
 			dataIndex: "_used",
 			stateId: "_used",
 			renderer: function(value) {
-				if (!value || 0 === value.length) {
+				if (is_null(value)) {
+					// Not unlocked so we don't know if the
+					// decrypted device is used or not
 					value = _("n/a");
 				}
 				return value;

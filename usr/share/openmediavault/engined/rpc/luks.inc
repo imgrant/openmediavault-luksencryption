@@ -118,13 +118,13 @@ class OMVRpcServiceLuksMgmt extends OMVRpcServiceAbstract {
 		// Enumerate all LUKS containers on the system.
 		$containers = $this->callMethod("enumerateContainers", NULL, $context);
 		foreach($containers as $luksk => &$luksv) {
-			$used = FALSE;
+			$used = (!$luks['unlocked']) ? NULL : FALSE;
 			// Does the logical volume contain a filesystem and is it used?
 			if(FALSE !== OMVRpc::exec("FsTab", "getByFsName", array(
 			  "id" => $luksv['decrypteddevicefile']), $context)) {
 				$used = TRUE;
 			}
-			$luksv['_used'] = $used;
+			$luksv['_used'] = $used; // null if locked, otherwise true if used, false if not
 		}
 		// Filter result.
 		return $this->applyFilter($containers, $params['start'], $params['limit'],
