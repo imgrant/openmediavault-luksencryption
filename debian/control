@@ -8,7 +8,7 @@ XB-Plugin-Section: filesystems
 
 Package: openmediavault-luksencryption
 Architecture: all
-Depends: openmediavault (>= 1.12), cryptsetup (>= 1.4), ${misc:Depends}
+Depends: openmediavault (>= 2.1.18), cryptsetup (>= 1.4), ${misc:Depends}
 Description:  OpenMediaVault LUKS encryption plugin
  LUKS is the standard for Linux hard disk encryption. By providing a
  standard on-disk-format, it not only facilitates compatibility
