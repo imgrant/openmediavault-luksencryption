@@ -431,7 +431,8 @@ class OMVLuksContainer extends OMVStorageDeviceAbstract {
 	 * @return TRUE if successful, otherwise FALSE.
 	 */
 	public function open($passphrase) {
-		$cmd = sprintf("export LANG=C; echo -n \"%s\" | cryptsetup luksOpen %s %s-crypt --key-file=- 2>&1",
+		$cmd = sprintf("export LANG=C; echo -n \"%s\" ".
+				"| cryptsetup luksOpen %s %s-crypt --key-file=- 2>&1",
 				$passphrase, $this->getDeviceFile(), $this->getDeviceName());
 		@OMVUtil::exec($cmd, $output, $result);
 		if ($result !== 0) {
@@ -447,7 +448,32 @@ class OMVLuksContainer extends OMVStorageDeviceAbstract {
 	 * @return TRUE if successful, otherwise FALSE.
 	 */
 	public function close() {
-		$cmd = sprintf("export LANG=C; cryptsetup luksClose %s 2>&1", $this->getDecryptedName());
+		$cmd = sprintf("export LANG=C; cryptsetup luksClose %s 2>&1",
+				$this->getDecryptedName());
+		@OMVUtil::exec($cmd, $output, $result);
+		if ($result !== 0) {
+			$this->setLastError($output);
+			return FALSE;
+		}
+		$this->refresh();
+		return TRUE;
+	}
+
+	/**
+	 * Change a key (passphrase) for the container.
+	 * @param params An array containing the following fields:
+	 *	 \em devicefile The device file representing the LUKS container.
+	 *	 \em oldpassphrase The passphrase to unlock the device.
+	 *	 \em newpassphrase The new passphrase to replace the old one with.
+	 * @return TRUE if successful, otherwise FALSE.
+	 */
+	public function changeKey($params) {
+		$cmd = sprintf("export LANG=C; echo -n \"%s\" ".
+			"| cryptsetup luksChangeKey %s --key-file=- ".
+			"<(echo -n \"%s\") 2>&1",
+			$params['oldpassphrase'],
+			escapeshellarg($params['devicefile'])
+			$params['newpassphrase']);
 		@OMVUtil::exec($cmd, $output, $result);
 		if ($result !== 0) {
 			$this->setLastError($output);
