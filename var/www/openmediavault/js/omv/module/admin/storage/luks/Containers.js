@@ -151,7 +151,7 @@ Ext.define("OMV.module.admin.storage.luks.container.Unlock", {
 	title: _("Unlock encrypted device"),
 	autoLoadData: false,
 	hideResetButton: true,
-	okButtonText: "Unlock",
+	okButtonText: _("Unlock"),
 	width: 450,
 
 	getFormConfig: function() {
@@ -178,6 +178,90 @@ Ext.define("OMV.module.admin.storage.luks.container.Unlock", {
 			fieldLabel: _("Passphrase"),
 			allowBlank: false
 		}];
+	},
+
+	getRpcSetParams: function() {
+		var me = this;
+		var params = me.callParent(arguments);
+		return Ext.apply(params, {
+			devicefile: me.devicefile
+		});
+	}
+});
+
+
+/**
+ * @class OMV.module.admin.storage.luks.container.ChangePassphrase
+ * @derived OMV.workspace.window.Form
+ * @param uuid The UUID of the configuration object.
+ * @param devicefile The device file, e.g. /dev/sda.
+ */
+Ext.define("OMV.module.admin.storage.luks.container.ChangePassphrase", {
+	extend: "OMV.workspace.window.Form",
+
+	rpcService: "LuksMgmt",
+	rpcSetMethod: "changeContainerPassphrase",
+	title: _("Change passphrase"),
+	autoLoadData: false,
+	okButtonText: _("OK"),
+	hideResetButton: true,
+	width: 450,
+
+	getFormConfig: function() {
+		return {
+			layout: {
+				type: "vbox",
+				align: "stretch"
+			}
+		};
+	},
+
+	getFormItems: function() {
+		var me = this;
+		return [{
+			xtype: "textfield",
+			name: "devicefile",
+			fieldLabel: _("Device"),
+			allowBlank: false,
+			readOnly: true,
+			value: me.devicefile
+		},{
+			xtype: "passwordfield",
+			name: "oldpassphrase",
+			fieldLabel: _("Current passphrase"),
+			allowBlank: false
+		},{
+			xtype: "passwordfield",
+			name: "newpassphrase",
+			fieldLabel: _("New passphrase"),
+			allowBlank: false,
+			triggerAction: "all"
+		},{
+			xtype: "passwordfield",
+			name: "newpassphraseconf",
+			fieldLabel: _("Confirm passphrase"),
+			allowBlank: false,
+			submitValue: false
+		}];
+	},
+
+	isValid: function() {
+		var me = this;
+		if (!me.callParent(arguments))
+			return false;
+		var valid = true;
+		var values = me.getValues();
+		// Check the passphrases match.
+		var field = me.findField("newpassphraseconf");
+		if (values.newpassphrase !== field.getValue()) {
+			var msg = _("Passphrases don't match");
+			me.markInvalid([
+				{ id: "newpassphrase", msg: msg },
+				{ id: "newpassphraseconf", msg: msg }
+			]);
+			valid = false;
+		}
+		return valid;
 	},
 
 	getRpcSetParams: function() {
@@ -369,6 +453,29 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
 			scope: me,
 			disabled: true
 		},{
+			id: me.getId() + "-keys",
+			xtype: "splitbutton",
+			text: _("Keys…"),
+			icon: "images/key.svg",
+			iconCls: Ext.baseCSSPrefix + "btn-icon-16x16",
+			disabled: true,
+			handler: function() {
+				this.showMenu();
+			},
+			menu: Ext.create("Ext.menu.Menu", {
+				items: [
+					{ text: _("Add"), 		value: "add" 		},
+					{ text: _("Change"),	value: "change" },
+					{ text: _("Remove"),	value: "remove" }
+				],
+				listeners: {
+					scope: me,
+          click: function(menu, item, e, eOpts) {
+						this.onKeysButton(item.value);
+          }
+				}
+			})
+		},{
 			id: me.getId() + "-detail",
 			xtype: "button",
 			text: _("Detail"),
@@ -389,12 +496,14 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
 			"delete": true,
 			"unlock": true,
 			"lock": true,
+			"keys": true,
 			"detail": true
 		};
 		if (records.length <= 0) {
 			tbarBtnDisabled["delete"] = true;
 			tbarBtnDisabled["unlock"] = true;
 			tbarBtnDisabled["lock"] = true;
+			tbarBtnDisabled["keys"] = true;
 			tbarBtnDisabled["detail"] = true;
 		} else if(records.length == 1) {
 			var record = records[0];
@@ -402,6 +511,7 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
 			tbarBtnDisabled["delete"] = true;
 			tbarBtnDisabled["unlock"] = true;
 			tbarBtnDisabled["lock"] = true;
+			tbarBtnDisabled["keys"] = false;
 			tbarBtnDisabled["detail"] = false;
 			// Disable/enable the unlock/lock buttons depending on whether
 			// the selected device is open.
@@ -426,6 +536,7 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
 			tbarBtnDisabled["delete"] = false;
 			tbarBtnDisabled["unlock"] = true;
 			tbarBtnDisabled["lock"] = true;
+			tbarBtnDisabled["keys"] = true;
 			tbarBtnDisabled["detail"] = true;
 		}
 		// Disable 'Delete' button if a selected device is in use or unlocked
@@ -490,6 +601,52 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
 			}
 		});
 	},
+
+	onKeysButton: function(action) {
+	  var me = this;
+		var record = me.getSelected();
+	  switch(action) {
+	  case "add":
+      Ext.create("OMV.module.admin.storage.luks.container.AddPassphrase", {
+        title: _("Add passphrase"),
+				uuid: record.get("uuid"),
+				devicefile: record.get("devicefile"),
+        listeners: {
+          scope: me,
+          submit: function() {
+                  this.doReload();
+          }
+        }
+      }).show();
+      break;
+	  case "change":
+      Ext.create("OMV.module.admin.storage.luks.container.ChangePassphrase", {
+				title: _("Change passphrase"),
+				uuid: record.get("uuid"),
+				devicefile: record.get("devicefile"),
+        listeners: {
+          scope: me,
+          submit: function() {
+                  this.doReload();
+          }
+        }
+      }).show();
+      break;
+		case "remove":
+      Ext.create("OMV.module.admin.storage.luks.container.RemovePassphrase", {
+				title: _("Remove passphrase"),
+				uuid: record.get("uuid"),
+				devicefile: record.get("devicefile"),
+        listeners: {
+          scope: me,
+          submit: function() {
+                  this.doReload();
+          }
+        }
+      }).show();
+      break;
+	  }
+  },
 
 	onItemDblClick: function() {
 		var me = this;

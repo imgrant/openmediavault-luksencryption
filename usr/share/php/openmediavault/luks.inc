@@ -221,6 +221,9 @@ class OMVLuksContainer extends OMVStorageDeviceAbstract {
 	 * @return TRUE if the device is a LUKS container, otherwise FALSE.
 	 */
 	public static function isLuksContainer($deviceFile) {
+		// TODO: would it be better (quicker) to check the UUID
+		// in, e.g., /sys/block/dm-0/dm/uuid (it begins 'CRYPTO' for
+		// LUKS/dm-crypt devices)?
 		$cmd = sprintf("export LANG=C; cryptsetup isLuks %s", $deviceFile);
 		@OMVUtil::exec($cmd, $output, $result);
 		if($result !== 0)
@@ -472,7 +475,7 @@ class OMVLuksContainer extends OMVStorageDeviceAbstract {
 			"| cryptsetup luksChangeKey %s --key-file=- ".
 			"<(echo -n \"%s\") 2>&1",
 			$params['oldpassphrase'],
-			escapeshellarg($params['devicefile'])
+			escapeshellarg($params['devicefile']),
 			$params['newpassphrase']);
 		@OMVUtil::exec($cmd, $output, $result);
 		if ($result !== 0) {
