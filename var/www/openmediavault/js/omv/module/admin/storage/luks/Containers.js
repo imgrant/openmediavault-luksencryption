@@ -191,19 +191,20 @@ Ext.define("OMV.module.admin.storage.luks.container.Unlock", {
 
 
 /**
- * @class OMV.module.admin.storage.luks.container.ChangePassphrase
+ * @class OMV.module.admin.storage.luks.container.AddPassphrase
  * @derived OMV.workspace.window.Form
  * @param uuid The UUID of the configuration object.
  * @param devicefile The device file, e.g. /dev/sda.
+ * TODO: check free key slots, notify if no free slots
  */
-Ext.define("OMV.module.admin.storage.luks.container.ChangePassphrase", {
+Ext.define("OMV.module.admin.storage.luks.container.AddPassphrase", {
 	extend: "OMV.workspace.window.Form",
 
 	rpcService: "LuksMgmt",
-	rpcSetMethod: "changeContainerPassphrase",
-	title: _("Change passphrase"),
+	rpcSetMethod: "addContainerPassphrase",
+	title: _("Add passphrase"),
 	autoLoadData: false,
-	okButtonText: _("OK"),
+	okButtonText: _("Add"),
 	hideResetButton: true,
 	width: 450,
 
@@ -275,6 +276,160 @@ Ext.define("OMV.module.admin.storage.luks.container.ChangePassphrase", {
 
 
 /**
+ * @class OMV.module.admin.storage.luks.container.ChangePassphrase
+ * @derived OMV.workspace.window.Form
+ * @param uuid The UUID of the configuration object.
+ * @param devicefile The device file, e.g. /dev/sda.
+ */
+Ext.define("OMV.module.admin.storage.luks.container.ChangePassphrase", {
+	extend: "OMV.workspace.window.Form",
+
+	rpcService: "LuksMgmt",
+	rpcSetMethod: "changeContainerPassphrase",
+	title: _("Change passphrase"),
+	autoLoadData: false,
+	okButtonText: _("Change"),
+	hideResetButton: true,
+	width: 450,
+
+	getFormConfig: function() {
+		return {
+			layout: {
+				type: "vbox",
+				align: "stretch"
+			}
+		};
+	},
+
+	getFormItems: function() {
+		var me = this;
+		return [{
+			xtype: "textfield",
+			name: "devicefile",
+			fieldLabel: _("Device"),
+			allowBlank: false,
+			readOnly: true,
+			value: me.devicefile
+		},{
+			xtype: "passwordfield",
+			name: "oldpassphrase",
+			fieldLabel: _("Current passphrase"),
+			allowBlank: false
+		},{
+			xtype: "passwordfield",
+			name: "newpassphrase",
+			fieldLabel: _("New passphrase"),
+			allowBlank: false,
+			triggerAction: "all"
+		},{
+			xtype: "passwordfield",
+			name: "newpassphraseconf",
+			fieldLabel: _("Confirm passphrase"),
+			allowBlank: false,
+			submitValue: false
+		}];
+	},
+
+	isValid: function() {
+		var me = this;
+		if (!me.callParent(arguments))
+			return false;
+		var valid = true;
+		var values = me.getValues();
+		// Check the passphrases match.
+		var field = me.findField("newpassphraseconf");
+		if (values.newpassphrase !== field.getValue()) {
+			var msg = _("Passphrases don't match");
+			me.markInvalid([
+				{ id: "newpassphrase", msg: msg },
+				{ id: "newpassphraseconf", msg: msg }
+			]);
+			valid = false;
+		}
+		return valid;
+	},
+
+	getRpcSetParams: function() {
+		var me = this;
+		var params = me.callParent(arguments);
+		return Ext.apply(params, {
+			devicefile: me.devicefile
+		});
+	}
+});
+
+
+/**
+ * @class OMV.module.admin.storage.luks.container.RemovePassphrase
+ * @derived OMV.workspace.window.Form
+ * @param uuid The UUID of the configuration object.
+ * @param devicefile The device file, e.g. /dev/sda.
+ * TODO: check used key slots, warn if removing last key
+ */
+Ext.define("OMV.module.admin.storage.luks.container.RemovePassphrase", {
+	extend: "OMV.workspace.window.Form",
+
+	rpcService: "LuksMgmt",
+	rpcSetMethod: "removeContainerPassphrase",
+	title: _("Remove passphrase"),
+	autoLoadData: false,
+	okButtonText: _("Remove"),
+	hideResetButton: true,
+	width: 450,
+
+	getFormConfig: function() {
+		return {
+			layout: {
+				type: "vbox",
+				align: "stretch"
+			}
+		};
+	},
+
+	getFormItems: function() {
+		var me = this;
+		return [{
+			xtype: "textfield",
+			name: "devicefile",
+			fieldLabel: _("Device"),
+			allowBlank: false,
+			readOnly: true,
+			value: me.devicefile
+		},{
+			xtype: "passwordfield",
+			name: "passphrase",
+			fieldLabel: _("Passphrase"),
+			allowBlank: false
+		}];
+	},
+
+	doSubmit: function() {
+		var me = this;
+		OMV.MessageBox.show({
+			title: _("Confirmation"),
+			msg: _("Do you really want to remove this passphrase? Ensure that you have another passphrase which will unlock the device."),
+			buttons: Ext.Msg.YESNO,
+			fn: function(answer) {
+				if(answer === "no")
+					return;
+				me.superclass.doSubmit.call(me);
+			},
+			scope: me,
+			icon: Ext.Msg.QUESTION
+		});
+	},
+
+	getRpcSetParams: function() {
+		var me = this;
+		var params = me.callParent(arguments);
+		return Ext.apply(params, {
+			devicefile: me.devicefile
+		});
+	}
+});
+
+
+/**
  * @class OMV.module.admin.storage.luks.container.Detail
  * @derived OMV.workspace.window.TextArea
  */
@@ -284,8 +439,8 @@ Ext.define("OMV.module.admin.storage.luks.container.Detail", {
 	rpcService: "LuksMgmt",
 	rpcGetMethod: "getContainerDetails",
 	title: _("Encrypted device details"),
-	width: 550,
-	height: 450
+	width: 580,
+	height: 470
 });
 
 
@@ -365,16 +520,17 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
 				return value;
 			}
 		},{
-			xtype: "booleantextcolumn",
 			text: _("Referenced"),
 			sortable: true,
 			dataIndex: "_used",
 			stateId: "_used",
-			renderer: function(value) {
-				if (is_null(value)) {
+			renderer: function(value, metaData, record) {
+				if (!record.get("unlocked")) {
 					// Not unlocked so we don't know if the
 					// decrypted device is used or not
 					value = _("n/a");
+				} else {
+					value = OMV.util.Format.boolean(value);
 				}
 				return value;
 			}
@@ -646,7 +802,7 @@ Ext.define("OMV.module.admin.storage.luks.Containers", {
       }).show();
       break;
 	  }
-  },
+  	},
 
 	onItemDblClick: function() {
 		var me = this;
