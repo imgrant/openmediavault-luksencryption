@@ -1,3 +1,10 @@
+openmediavault-luksencryption (1.0.1) UNRELEASED; urgency=low
+
+  * Added key add/change/remove methods.
+  * Misc fixes.
+
+ -- OpenMediaVault Plugin Developers <plugins@omv-extras.org>  Thu, 05 Nov 2015 16:12:05 +0000
+
 openmediavault-luksencryption (1.0.0) UNRELEASED; urgency=low
 
   * Initial release.

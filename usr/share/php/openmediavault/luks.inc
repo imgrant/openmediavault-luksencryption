@@ -476,6 +476,8 @@ class OMVLuksContainer extends OMVStorageDeviceAbstract {
 	 * @return TRUE if successful, otherwise FALSE.
 	 */
 	public function addKey($params) {
+		// N.B. Need to use bash rather than default sh here for
+		// process substitution method of injecting new passphrase
 		$cmd = sprintf("/bin/bash -c 'export LANG=C; echo -n %s ".
 			"| cryptsetup luksAddKey %s --key-file=- ".
 			"<(echo -n %s) 2>&1'",
